@@ -1,13 +1,16 @@
 from fastapi import FastAPI, Depends, HTTPException, status
-from schemas import Product, ProductResponse
+from schemas import Product, ProductResponse, Seller, SellerResponse
 import models
 from database import engine, sessionLocal
 from sqlalchemy.orm import Session
 from typing import List
+from passlib.context import CryptContext
 
 app = FastAPI()
 
 models.Base.metadata.create_all(engine)
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_db():
     db = sessionLocal()
@@ -51,8 +54,17 @@ def get_product(id: int, db: Session = Depends(get_db)):
 
 @app.post("/products", status_code=status.HTTP_201_CREATED)
 def create_product(request: Product, db: Session = Depends(get_db)):
-    new_product = models.Product(name=request.name, description=request.description, price=request.price)
+    new_product = models.Product(name=request.name, description=request.description, price=request.price, seller_id=request.seller_id)
     db.add(new_product)
     db.commit()
     db.refresh(new_product)
     return new_product
+
+@app.post("/sellers", response_model=SellerResponse, status_code=status.HTTP_201_CREATED)
+def create_seller(request: Seller, db: Session = Depends(get_db)):
+    hashed_password = pwd_context.hash(request.password)
+    new_seller = models.Seller(username=request.username, email=request.email, password=hashed_password)
+    db.add(new_seller)
+    db.commit()
+    db.refresh(new_seller)
+    return new_seller
