@@ -26,5 +26,7 @@ class ProductResponse(BaseModel):
     class config:
         orm_mode = True # This is used to directly serialize the SQLAlchemy object to JSON
 
-
+class Login(BaseModel):
+    username: str
+    password: str
 
